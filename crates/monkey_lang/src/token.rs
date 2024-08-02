@@ -1,3 +1,4 @@
+#[derive(PartialEq, Eq)]
 pub enum Token {
     ILLEGAL,
     EOF,
@@ -44,17 +45,9 @@ impl ToString for Token {
                 RBRACE => "}",
                 FUNCTION => "FUNCTION",
                 LET => "LET",
-                INT { literal: _ } | IDENT { literal: _ } => panic!("never reach here"),
+                IDENT { literal: _ } | INT { literal: _ } => panic!("never reaches here"),
             }
             .to_string(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_next_token() {
-        let input = "=+(){},;";
     }
 }
