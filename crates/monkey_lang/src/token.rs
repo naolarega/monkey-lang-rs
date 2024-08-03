@@ -34,7 +34,7 @@ impl ToString for Token {
             INT { literal } => format!("INT {{ {literal} }}"),
             others => match others {
                 ILLEGAL => "ILLEGAL",
-                EOF => "EOF",
+                EOF => "",
                 ASSIGN => "=",
                 PLUS => "+",
                 COMMA => ",",

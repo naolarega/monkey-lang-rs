@@ -4,7 +4,7 @@ pub struct Lexer {
     input: String,
     position: usize,
     read_position: usize,
-    ch: u8,
+    ch: char,
 }
 
 impl Lexer {
@@ -13,7 +13,7 @@ impl Lexer {
             input,
             position: 0,
             read_position: 0,
-            ch: 0,
+            ch: char::default(),
         };
 
         new_lexer.read_char();
@@ -22,20 +22,39 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
-        todo!();
+        use crate::token::Token::*;
+
+        let token = match self.ch {
+            '=' => ASSIGN,
+            ';' => SEMICOLON,
+            '(' => LPAREN,
+            ')' => RPAREN,
+            ',' => COMMA,
+            '+' => PLUS,
+            '{' => LBRACE,
+            '}' => RBRACE,
+            '\x00' => EOF,
+            _ => panic!("unknown character"),
+        };
+
+        self.read_char();
+
+        token
     }
 
     fn read_char(&mut self) {
         if self.read_position > self.input.len() {
-            self.ch = 0;
+            self.ch = char::default();
         } else {
-            self.ch = self
+            self.ch = match self
                 .input
                 .chars()
                 .collect::<Vec<char>>()
                 .get(self.read_position)
-                .unwrap()
-                .clone() as u8;
+            {
+                Some(ch) => ch.clone(),
+                None => char::default(),
+            };
         }
 
         self.position = self.read_position;
