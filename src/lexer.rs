@@ -22,20 +22,23 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
-        use crate::token::Token::*;
+        use crate::token::TokenType::*;
 
-        let token = match self.ch {
-            '=' => ASSIGN,
-            ';' => SEMICOLON,
-            '(' => LPAREN,
-            ')' => RPAREN,
-            ',' => COMMA,
-            '+' => PLUS,
-            '{' => LBRACE,
-            '}' => RBRACE,
-            '\x00' => EOF,
-            _ => panic!("unknown character"),
-        };
+        let token = Token::new(
+            match self.ch {
+                '=' => ASSIGN,
+                ';' => SEMICOLON,
+                '(' => LPAREN,
+                ')' => RPAREN,
+                ',' => COMMA,
+                '+' => PLUS,
+                '{' => LBRACE,
+                '}' => RBRACE,
+                '\x00' => EOF,
+                _ => panic!("unknown character"),
+            },
+            self.ch.to_string(),
+        );
 
         self.read_char();
 
@@ -64,11 +67,13 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::{lexer::Lexer, token::Token};
+    use crate::{
+        lexer::Lexer,
+        token::TokenType::{self, *},
+    };
 
     struct TokenTypeLiteralPair {
-        expected_type: Token,
+        expected_type: TokenType,
         expected_literal: String,
     }
 
@@ -77,40 +82,40 @@ mod tests {
         let input = String::from("=+(){},;");
         let tests = [
             TokenTypeLiteralPair {
-                expected_type: Token::ASSIGN,
+                expected_type: ASSIGN,
                 expected_literal: String::from("="),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::PLUS,
+                expected_type: PLUS,
                 expected_literal: String::from("+"),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::LPAREN,
+                expected_type: LPAREN,
                 expected_literal: String::from("("),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::RPAREN,
+                expected_type: RPAREN,
                 expected_literal: String::from(")"),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::LBRACE,
+                expected_type: LBRACE,
                 expected_literal: String::from("{"),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::RBRACE,
+                expected_type: RBRACE,
                 expected_literal: String::from("}"),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::COMMA,
+                expected_type: COMMA,
                 expected_literal: String::from(","),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::SEMICOLON,
+                expected_type: SEMICOLON,
                 expected_literal: String::from(";"),
             },
             TokenTypeLiteralPair {
-                expected_type: Token::EOF,
-                expected_literal: String::from(""),
+                expected_type: EOF,
+                expected_literal: String::from("\x00"),
             },
         ];
         let mut lexer = Lexer::new(input);
@@ -118,8 +123,8 @@ mod tests {
         for token_type in tests.iter() {
             let token = lexer.next_token();
 
-            assert!(token == token_type.expected_type);
-            assert!(token.to_string() == token_type.expected_literal);
+            assert!(token.token_type() == token_type.expected_type);
+            assert!(token.literal() == token_type.expected_literal);
         }
     }
 }
