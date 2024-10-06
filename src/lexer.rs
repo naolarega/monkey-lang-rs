@@ -1,4 +1,7 @@
-use crate::token::Token;
+use crate::{
+    token::{look_up_ident, Token},
+    utils::{is_digit, is_letter},
+};
 
 pub struct Lexer {
     input: String,
@@ -24,6 +27,11 @@ impl Lexer {
     pub fn next_token(&mut self) -> Token {
         use crate::token::TokenType::*;
 
+        self.skip_whitespace();
+
+        let mut literal = None;
+        let mut already_read = false;
+
         let token = Token::new(
             match self.ch {
                 '=' => ASSIGN,
@@ -34,15 +42,69 @@ impl Lexer {
                 '+' => PLUS,
                 '{' => LBRACE,
                 '}' => RBRACE,
-                '\x00' => EOF,
-                _ => panic!("unknown character"),
+                '\0' => EOF,
+                _ => {
+                    if is_letter(&self.ch) {
+                        literal = Some(self.read_identifier());
+                        already_read = true;
+
+                        if let Some(ref ident) = literal {
+                            if let Some(token_type) = look_up_ident(ident) {
+                                token_type
+                            } else {
+                                IDENT
+                            }
+                        } else {
+                            unreachable!()
+                        }
+                    } else if is_digit(&self.ch) {
+                        literal = Some(self.read_number());
+                        already_read = true;
+
+                        INT
+                    } else {
+                        ILLEGAL
+                    }
+                }
             },
-            self.ch.to_string(),
+            if let Some(ident) = literal.clone() {
+                ident
+            } else {
+                self.ch.to_string()
+            },
         );
 
-        self.read_char();
+        if !already_read {
+            self.read_char();
+        }
 
         token
+    }
+
+    fn read_number(&mut self) -> String {
+        let position = self.position;
+
+        while is_digit(&self.ch) {
+            self.read_char();
+        }
+
+        self.input[position..self.position].to_string()
+    }
+
+    fn skip_whitespace(&mut self) {
+        while [' ', '\t', '\n', '\r'].contains(&self.ch) {
+            self.read_char();
+        }
+    }
+
+    fn read_identifier(&mut self) -> String {
+        let position = self.position;
+
+        while is_letter(&self.ch) {
+            self.read_char();
+        }
+
+        self.input[position..self.position].to_string()
     }
 
     fn read_char(&mut self) {
@@ -77,54 +139,73 @@ mod tests {
         expected_literal: String,
     }
 
+    macro_rules! token_type_literal_pair {
+        ($expected_type:ident, $expected_literal:expr) => {
+            TokenTypeLiteralPair {
+                expected_type: $expected_type,
+                expected_literal: String::from($expected_literal),
+            }
+        };
+    }
+
     #[test]
     fn test_next_token() {
-        let input = String::from("=+(){},;");
+        let input = String::from(
+            r#"
+            let five = 5;
+            let ten = 10;
+            let add = fn(x, y) {
+                x + y;
+            };
+            let result = add(five, ten);
+            "#,
+        );
         let tests = [
-            TokenTypeLiteralPair {
-                expected_type: ASSIGN,
-                expected_literal: String::from("="),
-            },
-            TokenTypeLiteralPair {
-                expected_type: PLUS,
-                expected_literal: String::from("+"),
-            },
-            TokenTypeLiteralPair {
-                expected_type: LPAREN,
-                expected_literal: String::from("("),
-            },
-            TokenTypeLiteralPair {
-                expected_type: RPAREN,
-                expected_literal: String::from(")"),
-            },
-            TokenTypeLiteralPair {
-                expected_type: LBRACE,
-                expected_literal: String::from("{"),
-            },
-            TokenTypeLiteralPair {
-                expected_type: RBRACE,
-                expected_literal: String::from("}"),
-            },
-            TokenTypeLiteralPair {
-                expected_type: COMMA,
-                expected_literal: String::from(","),
-            },
-            TokenTypeLiteralPair {
-                expected_type: SEMICOLON,
-                expected_literal: String::from(";"),
-            },
-            TokenTypeLiteralPair {
-                expected_type: EOF,
-                expected_literal: String::from("\x00"),
-            },
+            token_type_literal_pair!(LET, "let"),
+            token_type_literal_pair!(IDENT, "five"),
+            token_type_literal_pair!(ASSIGN, "="),
+            token_type_literal_pair!(INT, "5"),
+            token_type_literal_pair!(SEMICOLON, ";"),
+            token_type_literal_pair!(LET, "let"),
+            token_type_literal_pair!(IDENT, "ten"),
+            token_type_literal_pair!(ASSIGN, "="),
+            token_type_literal_pair!(INT, "10"),
+            token_type_literal_pair!(SEMICOLON, ";"),
+            token_type_literal_pair!(LET, "let"),
+            token_type_literal_pair!(IDENT, "add"),
+            token_type_literal_pair!(ASSIGN, "="),
+            token_type_literal_pair!(FUNCTION, "fn"),
+            token_type_literal_pair!(LPAREN, "("),
+            token_type_literal_pair!(IDENT, "x"),
+            token_type_literal_pair!(COMMA, ","),
+            token_type_literal_pair!(IDENT, "y"),
+            token_type_literal_pair!(RPAREN, ")"),
+            token_type_literal_pair!(LBRACE, "{"),
+            token_type_literal_pair!(IDENT, "x"),
+            token_type_literal_pair!(PLUS, "+"),
+            token_type_literal_pair!(IDENT, "y"),
+            token_type_literal_pair!(SEMICOLON, ";"),
+            token_type_literal_pair!(RBRACE, "}"),
+            token_type_literal_pair!(SEMICOLON, ";"),
+            token_type_literal_pair!(LET, "let"),
+            token_type_literal_pair!(IDENT, "result"),
+            token_type_literal_pair!(ASSIGN, "="),
+            token_type_literal_pair!(IDENT, "add"),
+            token_type_literal_pair!(LPAREN, "("),
+            token_type_literal_pair!(IDENT, "five"),
+            token_type_literal_pair!(COMMA, ","),
+            token_type_literal_pair!(IDENT, "ten"),
+            token_type_literal_pair!(RPAREN, ")"),
+            token_type_literal_pair!(SEMICOLON, ";"),
+            token_type_literal_pair!(EOF, "\0"),
         ];
         let mut lexer = Lexer::new(input);
 
-        for token_type in tests.iter() {
+        for expected_token in tests.iter() {
             let token = lexer.next_token();
 
-            assert!(token.token_type() == token_type.expected_type);
-            assert!(token.literal() == token_type.expected_literal);
+            assert!(token.token_type() == expected_token.expected_type);
+            assert!(token.literal() == expected_token.expected_literal);
         }
     }
 }

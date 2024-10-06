@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -47,6 +47,18 @@ impl ToString for TokenType {
         }
         .to_string()
     }
+}
+
+pub const KEYWORDS: [(&str, TokenType); 2] = [("fn", TokenType::FUNCTION), ("let", TokenType::LET)];
+
+pub fn look_up_ident(ident: &str) -> Option<TokenType> {
+    KEYWORDS.iter().find_map(|(keyword, token_type)| {
+        if *keyword == ident {
+            Some(*token_type)
+        } else {
+            None
+        }
+    })
 }
 
 #[derive(PartialEq, Eq)]
