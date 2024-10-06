@@ -1,3 +1,4 @@
+#[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TokenType {
     ILLEGAL,
@@ -10,11 +11,18 @@ pub enum TokenType {
     // Operators
     ASSIGN,
     PLUS,
+    MINUS,
+    BANG,
+    ASTERISK,
+    SLASH,
+    LT,
+    GT,
+    EQ,
+    NOT_EQ,
 
     // Delimiters
     COMMA,
     SEMICOLON,
-
     LPAREN,
     RPAREN,
     LBRACE,
@@ -23,6 +31,11 @@ pub enum TokenType {
     // KeyWords
     FUNCTION,
     LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN,
 }
 
 impl ToString for TokenType {
@@ -36,6 +49,14 @@ impl ToString for TokenType {
             INT => "INT",
             ASSIGN => "=",
             PLUS => "+",
+            MINUS => "-",
+            BANG => "!",
+            ASTERISK => "*",
+            SLASH => "/",
+            LT => "<",
+            GT => ">",
+            EQ => "==",
+            NOT_EQ => "!=",
             COMMA => ",",
             SEMICOLON => ";",
             LPAREN => "(",
@@ -44,12 +65,25 @@ impl ToString for TokenType {
             RBRACE => "}",
             FUNCTION => "FUNCTION",
             LET => "LET",
+            TRUE => "TRUE",
+            FALSE => "FALSE",
+            IF => "IF",
+            ELSE => "ELSE",
+            RETURN => "RETURN",
         }
         .to_string()
     }
 }
 
-pub const KEYWORDS: [(&str, TokenType); 2] = [("fn", TokenType::FUNCTION), ("let", TokenType::LET)];
+pub const KEYWORDS: [(&str, TokenType); 7] = [
+    ("fn", TokenType::FUNCTION),
+    ("let", TokenType::LET),
+    ("true", TokenType::TRUE),
+    ("false", TokenType::FALSE),
+    ("if", TokenType::IF),
+    ("else", TokenType::ELSE),
+    ("return", TokenType::RETURN),
+];
 
 pub fn look_up_ident(ident: &str) -> Option<TokenType> {
     KEYWORDS.iter().find_map(|(keyword, token_type)| {
