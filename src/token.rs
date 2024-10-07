@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter, Result};
+
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TokenType {
@@ -38,11 +40,11 @@ pub enum TokenType {
     RETURN,
 }
 
-impl ToString for TokenType {
-    fn to_string(&self) -> String {
+impl Display for TokenType {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> Result {
         use TokenType::*;
 
-        match self {
+        let string_token_type = match self {
             ILLEGAL => "ILLEGAL",
             EOF => "EOF",
             IDENT => "IDENT",
@@ -70,8 +72,9 @@ impl ToString for TokenType {
             IF => "IF",
             ELSE => "ELSE",
             RETURN => "RETURN",
-        }
-        .to_string()
+        };
+
+        write!(formatter, "{}", string_token_type)
     }
 }
 

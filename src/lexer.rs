@@ -1,5 +1,5 @@
 use crate::{
-    token::{look_up_ident, Token},
+    token::{look_up_ident, Token, TokenType},
     utils::{is_digit, is_letter},
 };
 
@@ -34,24 +34,30 @@ impl Lexer {
 
         let token = Token::new(
             match self.ch {
-                '=' if self.peek_char() == '=' => {
-                    self.read_char();
-                    literal = Some(String::from("=="));
-                    EQ
+                '=' => {
+                    if self.peek_char() == '=' {
+                        self.read_char();
+                        literal = Some(String::from("=="));
+                        EQ
+                    } else {
+                        ASSIGN
+                    }
                 }
-                '=' => ASSIGN,
                 ';' => SEMICOLON,
                 '(' => LPAREN,
                 ')' => RPAREN,
                 ',' => COMMA,
                 '+' => PLUS,
                 '-' => MINUS,
-                '!' if self.peek_char() == '=' => {
-                    self.read_char();
-                    literal = Some(String::from("!="));
-                    NOT_EQ
+                '!' => {
+                    if self.peek_char() == '=' {
+                        self.read_char();
+                        literal = Some(String::from("!="));
+                        NOT_EQ
+                    } else {
+                        BANG
+                    }
                 }
-                '!' => BANG,
                 '/' => SLASH,
                 '*' => ASTERISK,
                 '<' => LT,
@@ -157,5 +163,19 @@ impl Lexer {
 
         self.position = self.read_position;
         self.read_position += 1;
+    }
+}
+
+impl Iterator for Lexer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.next_token();
+
+        if let TokenType::EOF = token.token_type() {
+            return None;
+        }
+
+        Some(token)
     }
 }
